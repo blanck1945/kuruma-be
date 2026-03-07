@@ -1,0 +1,8 @@
+.env
+*.env
+*.db
+*.db-shm
+*.db-wal
+nul
+tmp/
+.claude/

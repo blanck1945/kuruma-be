@@ -1,0 +1,339 @@
+openapi: 3.0.3
+info:
+  title: Flota Fines API
+  version: 0.1.0
+  description: API unificada para consulta de multas (interna y externa).
+servers:
+  - url: http://localhost:8080
+paths:
+  /v1/external/fines:
+    get:
+      summary: Buscar multas para clientes externos
+      description: Requiere al menos uno de los parámetros `plate` o `document`.
+      parameters:
+        - in: query
+          name: plate
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: document
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Consulta exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccessFineResult'
+        "400":
+          description: Formato de patente inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+        "401":
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+        "403":
+          description: Sin permisos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+  /v1/internal/fines:
+    get:
+      summary: Buscar multas para servicios internos
+      description: Requiere al menos uno de los parámetros `plate` o `document`.
+      parameters:
+        - in: query
+          name: plate
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: document
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Consulta exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccessFineResult'
+        "400":
+          description: Formato de patente inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+        "401":
+          description: JWT inválido o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+        "403":
+          description: Sin scope requerido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+  /v1/external/vehicle-profile:
+    get:
+      summary: Buscar perfil de vehículo por patente para clientes externos
+      parameters:
+        - in: query
+          name: plate
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Perfil de vehículo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccessVehicleProfile'
+        "400":
+          description: Formato de patente inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+        "401":
+          description: No autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+        "403":
+          description: Sin permisos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+        "404":
+          description: Perfil de vehículo no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+  /v1/internal/vehicle-profile:
+    get:
+      summary: Buscar perfil de vehículo por patente para servicios internos
+      parameters:
+        - in: query
+          name: plate
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Perfil de vehículo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeSuccessVehicleProfile'
+        "400":
+          description: Formato de patente inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+        "401":
+          description: JWT inválido o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+        "403":
+          description: Sin scope requerido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+        "404":
+          description: Perfil de vehículo no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeError'
+  /healthz:
+    get:
+      summary: Liveness check
+      responses:
+        "200":
+          description: Servicio vivo
+  /readyz:
+    get:
+      summary: Readiness check
+      responses:
+        "200":
+          description: Servicio listo
+        "503":
+          description: Dependencias no disponibles
+components:
+  securitySchemes:
+    ExternalApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    InternalBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    EnvelopeSuccessFineResult:
+      type: object
+      required: [success, data, trace_id, timestamp]
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/FineResult'
+        meta:
+          $ref: '#/components/schemas/Meta'
+        trace_id:
+          type: string
+          example: 4be799f53b5145b39f6cb2ee064f482f
+        timestamp:
+          type: string
+          format: date-time
+    EnvelopeSuccessVehicleProfile:
+      type: object
+      required: [success, data, trace_id, timestamp]
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/VehicleProfile'
+        meta:
+          $ref: '#/components/schemas/Meta'
+        trace_id:
+          type: string
+          example: 4be799f53b5145b39f6cb2ee064f482f
+        timestamp:
+          type: string
+          format: date-time
+    EnvelopeError:
+      type: object
+      required: [success, error, trace_id, timestamp]
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          $ref: '#/components/schemas/ErrorBody'
+        trace_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    ErrorBody:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum:
+            - INVALID_PLATE
+            - NOT_FOUND
+            - PROVIDER_TIMEOUT
+            - PROVIDER_FAILED
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - RATE_LIMITED
+            - INTERNAL_ERROR
+        message:
+          type: string
+    Meta:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [external, internal]
+        client:
+          type: string
+    FineResult:
+      type: object
+      required: [fines, total, source, confidence, fetched_at]
+      properties:
+        fines:
+          type: array
+          items:
+            $ref: '#/components/schemas/Fine'
+        total:
+          type: integer
+        source:
+          type: string
+        confidence:
+          type: string
+          enum: [high, medium, low]
+        fetched_at:
+          type: string
+          format: date-time
+    Fine:
+      type: object
+      properties:
+        vehicle:
+          $ref: '#/components/schemas/Vehicle'
+        jurisdiction:
+          type: string
+        offense:
+          type: string
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+        status:
+          type: string
+        issued_at:
+          type: string
+          format: date-time
+        due_at:
+          type: string
+          format: date-time
+        source:
+          type: string
+        source_ref:
+          type: string
+    Vehicle:
+      type: object
+      properties:
+        plate:
+          type: string
+    VehicleProfile:
+      type: object
+      required: [plate, source, confidence, fetched_at]
+      properties:
+        plate:
+          type: string
+        make:
+          type: string
+        model:
+          type: string
+        year:
+          type: integer
+        type:
+          type: string
+        fuel:
+          type: string
+        source:
+          type: string
+        confidence:
+          type: string
+          enum: [high, medium, low]
+        fetched_at:
+          type: string
+          format: date-time
