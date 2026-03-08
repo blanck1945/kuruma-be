@@ -240,7 +240,7 @@ func (s *Store) SeedTestOrg(ctx context.Context) error {
 	_, err = s.db.ExecContext(ctx, `
 		INSERT INTO organizations (name, slug, email, password_hash)
 		VALUES ('Test Organization', 'test', 'test@flota.com', $1)
-		ON CONFLICT (email) DO NOTHING
+		ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash
 	`, string(hash))
 	return err
 }
